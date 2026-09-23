@@ -1,0 +1,30 @@
+name: jenkins-mcp
+description: MCP server for Jenkins — list jobs, trigger builds, check build status and fetch console logs from any Jenkins instance.
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required:
+      - JENKINS_URL
+      - JENKINS_USER
+      - JENKINS_TOKEN
+    properties:
+      JENKINS_URL:
+        type: string
+        description: "Base URL of your Jenkins instance (e.g. https://jenkins.example.com)"
+      JENKINS_USER:
+        type: string
+        description: "Your Jenkins username or email address"
+      JENKINS_TOKEN:
+        type: string
+        description: "Jenkins API token — generate at Jenkins UI → your username → Configure → Add new Token"
+  commandFunction: |-
+    (config) => ({
+      command: "npx",
+      args: ["-y", "@ravian0772/jenkins-mcp"],
+      env: {
+        JENKINS_URL: config.JENKINS_URL,
+        JENKINS_USER: config.JENKINS_USER,
+        JENKINS_TOKEN: config.JENKINS_TOKEN
+      }
+    })
