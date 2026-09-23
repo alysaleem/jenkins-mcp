@@ -1,5 +1,16 @@
 name: jenkins-mcp
-description: MCP server for Jenkins — list jobs, trigger builds, check build status and fetch console logs from any Jenkins instance.
+displayName: Jenkins MCP
+description: >
+  Connect AI assistants to any Jenkins CI/CD server. List jobs, trigger
+  parameterised builds, check build status, fetch console logs, and inspect
+  job metadata — all from natural language without leaving your editor.
+homepage: https://github.com/alysaleem/jenkins-mcp
+icon: https://raw.githubusercontent.com/alysaleem/jenkins-mcp/main/icon.svg
+license: MIT
+author:
+  name: Shahzada Ali Saleem
+  url: https://github.com/alysaleem
+
 startCommand:
   type: stdio
   configSchema:
@@ -11,13 +22,34 @@ startCommand:
     properties:
       JENKINS_URL:
         type: string
-        description: "Base URL of your Jenkins instance (e.g. https://jenkins.example.com)"
+        title: Jenkins URL
+        description: "Base URL of your Jenkins instance, e.g. https://jenkins.example.com"
+        examples:
+          - "https://jenkins.example.com"
       JENKINS_USER:
         type: string
+        title: Jenkins Username
         description: "Your Jenkins username or email address"
+        examples:
+          - "you@example.com"
       JENKINS_TOKEN:
         type: string
-        description: "Jenkins API token — generate at Jenkins UI → your username → Configure → Add new Token"
+        title: Jenkins API Token
+        description: "Jenkins API token (not your password). Generate at: Jenkins UI → your username → Configure → Add new Token"
+        format: password
+      JENKINS_TIMEOUT_MS:
+        type: number
+        title: Request Timeout (ms)
+        description: "Optional. HTTP request timeout in milliseconds. Default: 30000"
+        default: 30000
+      LOG_LEVEL:
+        type: string
+        title: Log Level
+        description: "Optional. Set to 'debug' for verbose logging. Default: info"
+        enum:
+          - info
+          - debug
+        default: info
   commandFunction: |-
     (config) => ({
       command: "npx",
@@ -25,6 +57,93 @@ startCommand:
       env: {
         JENKINS_URL: config.JENKINS_URL,
         JENKINS_USER: config.JENKINS_USER,
-        JENKINS_TOKEN: config.JENKINS_TOKEN
+        JENKINS_TOKEN: config.JENKINS_TOKEN,
+        ...(config.JENKINS_TIMEOUT_MS ? { JENKINS_TIMEOUT_MS: String(config.JENKINS_TIMEOUT_MS) } : {}),
+        ...(config.LOG_LEVEL ? { LOG_LEVEL: config.LOG_LEVEL } : {})
       }
     })
+
+tools:
+  - name: list_jobs
+    description: >
+      List Jenkins jobs in a folder or at the top level. Returns each job's
+      name, URL, colour/status indicator, and last build result. Pass a
+      folder path such as "my-org/my-team" to list jobs inside a folder,
+      or omit it for top-level jobs.
+    parameters:
+      - name: folder
+        description: >
+          Optional folder path (e.g. "my-org" or "my-org/my-team").
+          Leave empty to list top-level jobs.
+        required: false
+
+  - name: get_job_info
+    description: >
+      Get detailed metadata about a Jenkins job: display name, description,
+      build health score, last build result and timestamp, last successful
+      and failed build numbers, all defined build parameters with their
+      types and defaults, and the 5 most recent build results.
+    parameters:
+      - name: job_path
+        description: >
+          Full job path relative to Jenkins root, using "/" as separator.
+          Examples: "my-org/my-app" or "my-org/my-app/main".
+        required: true
+
+  - name: trigger_build
+    description: >
+      Trigger a Jenkins build for a job. Works for both plain and
+      parameterised jobs. Pass key/value pairs in "parameters" to set
+      build parameters. Returns immediately with a confirmation — use
+      get_build_status to poll progress.
+    parameters:
+      - name: job_path
+        description: >
+          Full job path relative to Jenkins root, e.g. "my-org/my-app/main".
+        required: true
+      - name: parameters
+        description: >
+          Optional key/value build parameters, e.g.
+          {"BRANCH": "main", "SKIP_TESTS": "false"}.
+        required: false
+
+  - name: get_build_status
+    description: >
+      Get the status of a specific Jenkins build. Returns build number,
+      result (SUCCESS / FAILURE / ABORTED / IN PROGRESS), start time,
+      duration in seconds, trigger cause, and URL. Use "lastBuild",
+      "lastSuccessfulBuild", "lastFailedBuild", or "lastStableBuild" as
+      aliases instead of a numeric build number.
+    parameters:
+      - name: job_path
+        description: >
+          Full job path, e.g. "my-org/my-app/main".
+        required: true
+      - name: build_number
+        description: >
+          Build number (integer) or a Jenkins alias: "lastBuild",
+          "lastSuccessfulBuild", "lastFailedBuild", "lastStableBuild".
+          Defaults to "lastBuild".
+        required: false
+
+  - name: get_build_log
+    description: >
+      Fetch the console log for a Jenkins build. Returns the last
+      tail_lines lines (default 150) to avoid overwhelming output — set
+      tail_lines to 0 to retrieve the full log. Useful for debugging
+      failed builds or monitoring a build in progress.
+    parameters:
+      - name: job_path
+        description: >
+          Full job path, e.g. "my-org/my-app/main".
+        required: true
+      - name: build_number
+        description: >
+          Build number or alias ("lastBuild", "lastSuccessfulBuild",
+          "lastFailedBuild"). Defaults to "lastBuild".
+        required: false
+      - name: tail_lines
+        description: >
+          Number of trailing log lines to return. Set to 0 for the full
+          log. Default: 150.
+        required: false
