@@ -1,7 +1,7 @@
 {
   "name": "@ravian0772/jenkins-mcp",
-  "version": "1.0.0",
-  "description": "MCP server for Jenkins — list jobs, trigger builds, check status, fetch logs",
+  "version": "1.0.1",
+  "description": "Connect AI assistants to any Jenkins CI/CD server. List jobs, trigger parameterised builds, check build status, fetch console logs, and inspect job metadata — all from natural language without leaving your editor.",
   "type": "module",
   "main": "build/index.js",
   "bin": {
@@ -13,8 +13,17 @@
     "dev": "tsc --watch",
     "prepublishOnly": "npm run build"
   },
-  "keywords": ["mcp", "jenkins", "ci", "devops", "mcp-server"],
+  "keywords": ["mcp", "jenkins", "ci", "devops", "mcp-server", "mcp-tools", "jenkins-ci", "ai-tools"],
+  "author": {
+    "name": "Shahzada Ali Saleem",
+    "url": "https://github.com/alysaleem",
+    "email": "shahzada.ali.saleem@gmail.com"
+  },
   "license": "MIT",
+  "homepage": "https://github.com/alysaleem/jenkins-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/alysaleem/jenkins-mcp/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/alysaleem/jenkins-mcp"
