@@ -40,15 +40,17 @@ startCommand:
       JENKINS_TIMEOUT_MS:
         type: number
         title: Request Timeout (ms)
-        description: "Optional. HTTP request timeout in milliseconds. Default: 30000"
+        description: "HTTP request timeout in milliseconds."
         default: 30000
       LOG_LEVEL:
         type: string
         title: Log Level
-        description: "Optional. Set to 'debug' for verbose logging. Default: info"
+        description: "Logging verbosity level."
         enum:
           - info
           - debug
+          - warn
+          - error
         default: info
   commandFunction: |-
     (config) => ({

@@ -13,28 +13,30 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
-// Config — read from env, fail fast if missing
+// Config — read from env (all optional at startup; tools return guidance if missing)
 // ---------------------------------------------------------------------------
 const JENKINS_URL = (process.env.JENKINS_URL ?? "").replace(/\/$/, "");
 const JENKINS_USER = process.env.JENKINS_USER ?? "";
 const JENKINS_TOKEN = process.env.JENKINS_TOKEN ?? "";
 
-if (!JENKINS_URL || !JENKINS_USER || !JENKINS_TOKEN) {
-  console.error(
-    "ERROR: JENKINS_URL, JENKINS_USER, and JENKINS_TOKEN must all be set."
-  );
-  process.exit(1);
+function getAuth(): string | null {
+  if (!JENKINS_URL || !JENKINS_USER || !JENKINS_TOKEN) return null;
+  return Buffer.from(`${JENKINS_USER}:${JENKINS_TOKEN}`).toString("base64");
 }
 
-const AUTH = Buffer.from(`${JENKINS_USER}:${JENKINS_TOKEN}`).toString("base64");
+const CONFIG_ERROR =
+  "Jenkins credentials not configured. Set JENKINS_URL, JENKINS_USER, and JENKINS_TOKEN " +
+  "environment variables. Generate a token at: Jenkins UI → your username → Configure → Add new Token.";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 async function jenkinsGet(path: string): Promise<unknown> {
+  const auth = getAuth();
+  if (!auth) throw new Error(CONFIG_ERROR);
   const url = `${JENKINS_URL}${path}`;
   const res = await fetch(url, {
-    headers: { Authorization: `Basic ${AUTH}`, Accept: "application/json" },
+    headers: { Authorization: `Basic ${auth}`, Accept: "application/json" },
   });
   if (!res.ok) {
     throw new Error(`Jenkins GET ${path} → HTTP ${res.status} ${res.statusText}`);
@@ -43,7 +45,7 @@ async function jenkinsGet(path: string): Promise<unknown> {
   try {
     return JSON.parse(text);
   } catch {
-    return text; // some endpoints return plain text (e.g. log output)
+    return text;
   }
 }
 
@@ -51,6 +53,8 @@ async function jenkinsPost(
   path: string,
   params?: Record<string, string>
 ): Promise<{ status: number; body: string }> {
+  const auth = getAuth();
+  if (!auth) throw new Error(CONFIG_ERROR);
   let url = `${JENKINS_URL}${path}`;
   if (params && Object.keys(params).length > 0) {
     const qs = new URLSearchParams(params).toString();
@@ -59,7 +63,7 @@ async function jenkinsPost(
   const res = await fetch(url, {
     method: "POST",
     headers: {
-      Authorization: `Basic ${AUTH}`,
+      Authorization: `Basic ${auth}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
   });

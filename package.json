@@ -1,6 +1,6 @@
 {
   "name": "@ravian0772/jenkins-mcp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Connect AI assistants to any Jenkins CI/CD server. List jobs, trigger parameterised builds, check build status, fetch console logs, and inspect job metadata — all from natural language without leaving your editor.",
   "type": "module",
   "main": "build/index.js",
@@ -9,7 +9,7 @@
   },
   "files": ["build", "README.md"],
   "scripts": {
-    "build": "tsc && chmod 755 build/index.js && node -e \"const fs=require('fs');const f='build/index.js';fs.writeFileSync(f,'#!/usr/bin/env node\\n'+fs.readFileSync(f,'utf8'))\"",
+    "build": "tsc && chmod 755 build/index.js && node -e \"const fs=require('fs');const f='build/index.js';const c=fs.readFileSync(f,'utf8');if(!c.startsWith('#!/'))fs.writeFileSync(f,'#!/usr/bin/env node\\n'+c)\"",
     "dev": "tsc --watch",
     "prepublishOnly": "npm run build"
   },
